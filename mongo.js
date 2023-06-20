@@ -10,6 +10,8 @@ const createOrder = async () =>{
     console.debug('Creating an order, order >> ', order)
     const result = await order.save()
     console.debug('Order created, id >> ', result.id)
+
+    return result.id
 }
 
 module.exports = {
