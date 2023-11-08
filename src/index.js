@@ -4,7 +4,8 @@ const cors = require('cors');
 const {createOrder} = require("./mongo");
 
 const app = express();
-app.use(cors())
+app.use(cors());
+
 
 app.get('/create-order', async (req, res) => {//TODO: should be post but we don't care
     const orderId = await createOrder()
@@ -37,6 +38,6 @@ app.get('/confirm-connection', (req, res) => {//TODO: handle update of the order
     `)
 })
 
-app.listen(process.env.PORT, () =>
-    console.log(`Example app listening on port ${process.env.PORT}!`),
+app.listen(process.env.CONTROLLER_PORT, () =>
+    console.log(`Example app listening on port ${process.env.CONTROLLER_PORT}!`),
 )
