@@ -1,29 +1,52 @@
-version: '3.1'
+version: '3.9'
 services:
   controller-mongo:
+    container_name: controller-mongo
     image: mongo
     restart: always
     volumes:
       - ./db:/data/db:rw
     ports:
       - 27017:27017
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: example
+    env_file: .env
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017 --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    networks:
+      - heimdall-network
 
   controller-mongo-express:
+    container_name: controller-mongo-express
     image: mongo-express
     restart: always
     ports:
-      - 8081:8081
-    environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: root
-      ME_CONFIG_MONGODB_ADMINPASSWORD: example
-      ME_CONFIG_MONGODB_URL: mongodb://root:example@mongo:27017/
+      - 8381:8081
+    env_file: .env
+    depends_on:
+      controller-mongo:
+        condition: service_healthy
+    networks:
+      - heimdall-network
 
   controller-backend:
+    container_name: controller-backend
     build:
       dockerfile: backend.Dockerfile
     ports:
       - 2222:2222
+    env_file: .env
+    depends_on:
+      controller-mongo:
+        condition: service_healthy
+    volumes:
+      - ./src:/app/src
+    command: yarn run dev
+    networks:
+      - heimdall-network
 
+networks:
+  heimdall-network:
+    external: true

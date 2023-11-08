@@ -1,40 +1,53 @@
 require('dotenv').config()
 const express = require('express');
 const cors = require('cors');
-const {createOrder} = require("./mongo");
+const {createOrder, incrementOrderStage} = require("./mongo");
+const {prepareConnectionInvitation} = require("./connection");
+const {requestAttributePresentation, verifyAttributePresentation} = require("./attribute-presentation");
 
 const app = express();
 app.use(cors());
+app.use(express.json())
 
 
 app.get('/create-order', async (req, res) => {//TODO: should be post but we don't care
-    const orderId = await createOrder()
-    const response = await fetch(`http://localhost:4444/connection-invitation?orderId=${orderId}`)
-    const connectionInvitation = await response.json()
-    console.debug(connectionInvitation)
-
-    res.redirect(`http://localhost:3333/?connection-invitation=${btoa(JSON.stringify(connectionInvitation))}`);
-
+    const orderID = await createOrder()
+    console.debug("/create-order?orderID=", orderID)
+    const connectionInvitation = prepareConnectionInvitation(orderID)
+    console.debug("connectionInvitation", connectionInvitation)
+    res.json(connectionInvitation)
     console.debug(`
     /create-order
     `)
 })
 
-//TODO: add tis additional step that the proof request is initiated after the connection is confirmed from the Controller
-const initiateProofRequest = (orderId) =>{
-
-}
-
-app.get('/confirm-connection', (req, res) => {//TODO: handle update of the order ID in the
-    const orderId = req.query.orderId
-    console.log()
+app.get('/confirm-connection', async (req, res) => {
+    const orderID = req.query.orderID
+    console.debug("/confirm-connection?orderID=", orderID)
+    await incrementOrderStage(orderID)
     res.send('Connection confirmed');
 
-    initiateProofRequest()
+    requestAttributePresentation(orderID)
 
     console.debug(`
     /confirm-connection
-    orderId: ${orderId}
+    orderID: ${orderID}
+    `)
+})
+
+app.post('/submit-attribute-presentation', async (req, res) => {
+    const orderID = req.query.orderID
+    console.debug("/submit-attribute-presentation?orderID=", orderID)
+    const attributePresentation = req.body
+    console.debug("attributePresentation", attributePresentation)
+    const verificationResult = await verifyAttributePresentation(orderID, attributePresentation)
+
+    res.json(verificationResult);
+
+    console.debug(`
+    /confirm-connection
+    orderID: ${orderID}
+    attributePresentation: ${JSON.stringify(attributePresentation)}
     `)
 })
 
