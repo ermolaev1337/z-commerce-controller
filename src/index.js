@@ -3,7 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const {createOrder, incrementOrderStage} = require("./mongo");
 const {prepareConnectionInvitation} = require("./connection");
-const {requestAttributePresentation, verifyAttributePresentation} = require("./attribute-presentation");
+const {requestAttributePresentation, verifyAttributePresentation, getContent, isRevoked} = require("./attribute-presentation");
 
 const app = express();
 app.use(cors());
@@ -27,6 +27,7 @@ app.get('/confirm-connection', async (req, res) => {
     await incrementOrderStage(orderID)
     res.send('Connection confirmed');
 
+    //TODO webhooks
     requestAttributePresentation(orderID)
 
     console.debug(`
@@ -40,15 +41,28 @@ app.post('/submit-attribute-presentation', async (req, res) => {
     console.debug("/submit-attribute-presentation?orderID=", orderID)
     const attributePresentation = req.body
     console.debug("attributePresentation", attributePresentation)
-    const verificationResult = await verifyAttributePresentation(orderID, attributePresentation)
+    const isValid = await verifyAttributePresentation(orderID, attributePresentation)
+    res.json({result:isValid})
 
-    res.json(verificationResult);
+    if (isValid){
+        if (!isRevoked(attributePresentation)){
+            const content = getContent(attributePresentation)
+            console.log(content)
+            return
+            //TODO pass the data to the checkout page
+        } else {
+            console.error("Revoked Credential")
+        }
+    } else {
+        console.error("Non-valid Presentation")
+    }
+    //TODO if is not valid or revoked - pass the error to the checkout
 
-    console.debug(`
-    /confirm-connection
-    orderID: ${orderID}
-    attributePresentation: ${JSON.stringify(attributePresentation)}
-    `)
+    // console.debug(`
+    // /confirm-connection
+    // orderID: ${orderID}
+    // attributePresentation: ${JSON.stringify(attributePresentation)}
+    // `)
 })
 
 app.listen(process.env.CONTROLLER_PORT, () =>

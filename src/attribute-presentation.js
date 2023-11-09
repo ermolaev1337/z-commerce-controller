@@ -6,35 +6,49 @@ const requestAttributePresentation = (orderID) => {
 }
 
 const verifierURL = process.env.HEIMDALL_VERIFIER_URL
+const fs = require('fs').promises;
+const path = require('path');
+const { exec } = require('child_process');
 
+//TODO something goes wrong here with the file uploading, it's a temp solution to upload the files, it does not support long filenames etc.
 const uploadAttributePresentationToVerifierHeimdall = async (fileName, attributePresentation) => {
-    const data = new FormData();
-    data.append(fileName, attributePresentation);
+    const tempFilePath = path.join(__dirname, fileName);
+    await fs.writeFile(tempFilePath, JSON.stringify(attributePresentation));
+    const curlCommand = `curl -s --request POST "http://${verifierURL}/upload/file?name=${fileName}" --form "uplfile=@${fileName}"`;
 
-    const uploadingResponse = await fetch(`http://${verifierURL}/upload/file?name=${fileName}`,{
-        method: 'POST',
-        body: data,
+    await exec(curlCommand, async (error, stdout, stderr) => {
+        await fs.unlink(tempFilePath)
+        if (error) {
+            throw error
+        }
+        if (stderr) {
+            throw stderr
+        }
+        console.log(`stdout: ${stdout}`);
     });
-    const uploadingResult = await uploadingResponse.json();
-    console.debug("uploadingResult", uploadingResult)
 }
 
 const verifyAttributePresentation = async (orderID, attributePresentation) => {
     console.debug("Verifying Attribute Presentation by orderID, orderID >>", orderID)
 
-    const attributePresentationFileName = `pres_attribute_before_revocation.json`
-    // const attributePresentationFileName = `attribute-presentation-${orderID}.json`
-    // await uploadAttributePresentationToVerifierHeimdall(attributePresentationFileName, attributePresentation)
+    const attributePresentationFileName = `${orderID}.json`
+    await uploadAttributePresentationToVerifierHeimdall(attributePresentationFileName, attributePresentation)
 
-    const verificationResultFileName = `attribute-presentation-${orderID}.txt`
+    const verificationResultFileName = `${orderID}.txt`
     const verificationResultResponse = await fetch(`http://${verifierURL}/heimdalljs/verify?path=${attributePresentationFileName}&name=${verificationResultFileName}`)
     const verificationResult = await verificationResultResponse.json()
     console.debug("Attribute Presentation verified by orderID, orderID >>", orderID)
     console.debug("Verification result, verificationResult >>", verificationResult)
-    return {result: Boolean(verificationResult)}
+    return Boolean(verificationResult)
 }
+
+const isRevoked = (attributePresentation) => attributePresentation.output.meta.revoked
+
+const getContent = (attributePresentation) => attributePresentation.output.content
 
 module.exports = {
     requestAttributePresentation,
     verifyAttributePresentation,
+    isRevoked,
+    getContent,
 };
