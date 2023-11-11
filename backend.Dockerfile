@@ -4,5 +4,6 @@ WORKDIR /app
 COPY ./package.json /app/package.json
 RUN yarn install
 COPY ./src /app/src
+RUN mkdir "tmp"
 
-ENTRYPOINT ["yarn", "start"]
+CMD ["yarn", "start"]
