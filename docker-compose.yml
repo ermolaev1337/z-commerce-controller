@@ -1,5 +1,5 @@
-version: '3.9'
 services:
+
   controller-mongo:
     container_name: controller-mongo
     image: mongo
@@ -15,8 +15,8 @@ services:
       timeout: 10s
       retries: 5
       start_period: 40s
-  #    networks:
-  #      - heimdall-network
+    networks:
+      - heimdall-network
 
   controller-mongo-express:
     container_name: controller-mongo-express
@@ -31,8 +31,8 @@ services:
     networks:
       - heimdall-network
 
-  controller-backend:
-    container_name: controller-backend
+  controller:
+    container_name: controller
     build:
       dockerfile: backend.Dockerfile
     ports:
@@ -46,6 +46,8 @@ services:
     command: yarn run dev
     networks:
       - heimdall-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:2222/health" ]
 
 networks:
   heimdall-network:

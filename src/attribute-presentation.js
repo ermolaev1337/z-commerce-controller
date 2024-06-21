@@ -43,6 +43,7 @@ const verifyAttributePresentation = async (orderID, attributePresentation, ) => 
 
     const verificationResultFileName = `${orderID}.txt`
     const verificationResultResponse = await fetch(`http://${verifierURL}/heimdalljs/verify?path=${attributePresentationFileName}&name=${verificationResultFileName}&publicKey=issuer_pk.json&challenge=${challenge}`)
+    console.debug("verificationResultResponse", verificationResultResponse)
     const verificationResult = await verificationResultResponse.json()
     console.debug("Attribute Presentation verified by orderID, orderID >>", orderID)
     console.debug("Verification result, verificationResult >>", verificationResult)

@@ -54,7 +54,7 @@ app.post('/submit-attribute-presentation', async (req, res) => {
             if (!isRevoked(attributePresentation)) {
                 const content = getContent(attributePresentation)
                 console.log(content)
-                const verificationResultResponse = await fetch(`http://checkout-backend:8000/webhook/checkout-data`,{
+                const verificationResultResponse = await fetch(`http://socket:8888/webhook/checkout-data`,{
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -65,7 +65,7 @@ app.post('/submit-attribute-presentation', async (req, res) => {
                 //TODO pass the data to the checkout page
             } else {
                 console.error("Revoked Credential")
-                const verificationResultResponse = await fetch(`http://checkout-backend:8000/webhook/checkout-data`,{
+                const verificationResultResponse = await fetch(`http://socket:8888/webhook/checkout-data`,{
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -76,7 +76,7 @@ app.post('/submit-attribute-presentation', async (req, res) => {
             }
         } else {
             console.error("Non-valid Presentation")
-            const verificationResultResponse = await fetch(`http://checkout-backend:8000/webhook/checkout-data`,{
+            const verificationResultResponse = await fetch(`http://socket:8888/webhook/checkout-data`,{
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -96,6 +96,10 @@ app.post('/submit-attribute-presentation', async (req, res) => {
         console.error(e)
     }
 })
+
+app.get('/health', (req, res) => {
+    res.status(200).send('Ok');
+});
 
 app.listen(process.env.CONTROLLER_PORT, () =>
     console.log(`Example app listening on port ${process.env.CONTROLLER_PORT}!`),
