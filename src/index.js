@@ -42,6 +42,8 @@ app.get('/confirm-connection', async (req, res) => {
     `)
 })
 
+const WS_SERVER = process.env.WS_SERVER
+
 app.post('/submit-attribute-presentation', async (req, res) => {
     try{
         const orderID = req.query.orderID
@@ -54,7 +56,7 @@ app.post('/submit-attribute-presentation', async (req, res) => {
             if (!isRevoked(attributePresentation)) {
                 const content = getContent(attributePresentation)
                 console.log(content)
-                const verificationResultResponse = await fetch(`http://socket-storefront:8888/webhook/checkout-data`,{
+                const verificationResultResponse = await fetch(`http://${WS_SERVER}/webhook/checkout-data`,{
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -66,7 +68,7 @@ app.post('/submit-attribute-presentation', async (req, res) => {
                 //TODO pass the data to the checkou§t page
             } else {
                 console.error("Revoked Credential")
-                const verificationResultResponse = await fetch(`http://socket-storefront:8888/webhook/checkout-data`,{
+                const verificationResultResponse = await fetch(`http://${WS_SERVER}/webhook/checkout-data`,{
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
@@ -79,7 +81,7 @@ app.post('/submit-attribute-presentation', async (req, res) => {
             }
         } else {
             console.error("Non-valid Presentation")
-            const verificationResultResponse = await fetch(`http://socket-storefront:8888/webhook/checkout-data`,{
+            const verificationResultResponse = await fetch(`http://${WS_SERVER}/webhook/checkout-data`,{
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",

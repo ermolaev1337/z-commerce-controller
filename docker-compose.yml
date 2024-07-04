@@ -1,6 +1,6 @@
 services:
 
-  controller-mongo:
+  controller-mongo: &mongo
     container_name: controller-mongo
     image: mongo
     restart: always
@@ -8,7 +8,7 @@ services:
       - ./db:/data/db:rw
     ports:
       - 27017:27017
-    env_file: .env
+    env_file: storefront.env
     healthcheck:
       test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017 --quiet
       interval: 10s
@@ -18,26 +18,46 @@ services:
     networks:
       - heimdall-network
 
-  controller-mongo-express:
+  controller-mongo-delivery:
+    <<: *mongo
+    container_name: controller-mongo-delivery
+    volumes:
+      - ./db-delivery:/data/db:rw
+    env_file: delivery.env
+    ports:
+      - 37017:27017
+
+  controller-mongo-express: &express
     container_name: controller-mongo-express
     image: mongo-express
     restart: always
     ports:
       - 8381:8081
-    env_file: .env
+    env_file: storefront.env
     depends_on:
       controller-mongo:
         condition: service_healthy
     networks:
       - heimdall-network
 
-  controller:
+  controller-mongo-express-delivery:
+    <<: *express
+    container_name: controller-mongo-express-delivery
+    env_file: delivery.env
+    ports:
+      - 8481:8081
+    depends_on:
+      controller-mongo-delivery:
+        condition: service_healthy
+
+
+  controller: &controller
     container_name: controller
     build:
-      dockerfile: backend.Dockerfile
+      dockerfile: Dockerfile
     ports:
       - 2222:2222
-    env_file: .env
+    env_file: storefront.env
     depends_on:
       controller-mongo:
         condition: service_healthy
@@ -48,6 +68,18 @@ services:
       - heimdall-network
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:2222/health" ]
+
+  controller-delivery:
+    <<: *controller
+    container_name: controller-delivery
+    ports:
+      - 12222:12222
+    env_file: delivery.env
+    depends_on:
+      controller-mongo-delivery:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:12222/health" ]
 
 networks:
   heimdall-network:
