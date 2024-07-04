@@ -61,8 +61,9 @@ app.post('/submit-attribute-presentation', async (req, res) => {
                     },
                     body: JSON.stringify(attributePresentation),
                 })
-                console.debug("verificationResultResponse", verificationResultResponse)
-                //TODO pass the data to the checkout page
+                const verificationResultResponseJson = await verificationResultResponse.json();
+                console.debug("verificationResultResponseJson", verificationResultResponseJson)
+                //TODO pass the data to the checkou§t page
             } else {
                 console.error("Revoked Credential")
                 const verificationResultResponse = await fetch(`http://socket:8888/webhook/checkout-data`,{
@@ -72,7 +73,9 @@ app.post('/submit-attribute-presentation', async (req, res) => {
                     },
                     body: JSON.stringify({error:"Revoked"}),
                 })
-                console.debug("verificationResultResponse", verificationResultResponse)
+                const verificationResultResponseJson = await verificationResultResponse.json();
+
+                console.debug("verificationResultResponseJson", verificationResultResponseJson)
             }
         } else {
             console.error("Non-valid Presentation")
@@ -83,7 +86,8 @@ app.post('/submit-attribute-presentation', async (req, res) => {
                 },
                 body: JSON.stringify({error:"Invalid credential"}),
             })
-            console.debug("verificationResultResponse", verificationResultResponse)
+            const verificationResultResponseJson = await verificationResultResponse.json();
+            console.debug("verificationResultResponseJson", verificationResultResponseJson)
         }
         //TODO if is not valid or revoked - pass the error to the checkout
         res.json({result: isValid})
