@@ -42,6 +42,8 @@ app.get('/confirm-connection', async (req, res) => {
     `)
 })
 
+const WS_SERVER = process.env.WS_SERVER
+
 app.post('/submit-attribute-presentation', async (req, res) => {
     try{
         const orderID = req.query.orderID
@@ -54,36 +56,40 @@ app.post('/submit-attribute-presentation', async (req, res) => {
             if (!isRevoked(attributePresentation)) {
                 const content = getContent(attributePresentation)
                 console.log(content)
-                const verificationResultResponse = await fetch(`http://checkout-backend:8000/webhook/checkout-data`,{
+                const verificationResultResponse = await fetch(`http://${WS_SERVER}/webhook/checkout-data`,{
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify(attributePresentation),
                 })
-                console.debug("verificationResultResponse", verificationResultResponse)
-                //TODO pass the data to the checkout page
+                const verificationResultResponseJson = await verificationResultResponse.json();
+                console.debug("verificationResultResponseJson", verificationResultResponseJson)
+                //TODO pass the data to the checkou§t page
             } else {
                 console.error("Revoked Credential")
-                const verificationResultResponse = await fetch(`http://checkout-backend:8000/webhook/checkout-data`,{
+                const verificationResultResponse = await fetch(`http://${WS_SERVER}/webhook/checkout-data`,{
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({error:"Revoked"}),
                 })
-                console.debug("verificationResultResponse", verificationResultResponse)
+                const verificationResultResponseJson = await verificationResultResponse.json();
+
+                console.debug("verificationResultResponseJson", verificationResultResponseJson)
             }
         } else {
             console.error("Non-valid Presentation")
-            const verificationResultResponse = await fetch(`http://checkout-backend:8000/webhook/checkout-data`,{
+            const verificationResultResponse = await fetch(`http://${WS_SERVER}/webhook/checkout-data`,{
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({error:"Invalid credential"}),
             })
-            console.debug("verificationResultResponse", verificationResultResponse)
+            const verificationResultResponseJson = await verificationResultResponse.json();
+            console.debug("verificationResultResponseJson", verificationResultResponseJson)
         }
         //TODO if is not valid or revoked - pass the error to the checkout
         res.json({result: isValid})
@@ -96,6 +102,10 @@ app.post('/submit-attribute-presentation', async (req, res) => {
         console.error(e)
     }
 })
+
+app.get('/health', (req, res) => {
+    res.status(200).send('Ok');
+});
 
 app.listen(process.env.CONTROLLER_PORT, () =>
     console.log(`Example app listening on port ${process.env.CONTROLLER_PORT}!`),

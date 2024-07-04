@@ -1,7 +1,7 @@
 const prepareConnectionInvitation = (orderID) => {
     console.debug("Sending connection invitation by orderID, orderID >>", orderID)
     return {
-        agentURL: "controller-backend:2222/",
+        agentURL: process.env.CONTROLLER_URL,
         orderID: orderID,//TODO connection specific connectionID
     }
 }
