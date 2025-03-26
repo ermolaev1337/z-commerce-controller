@@ -7,7 +7,7 @@ const {
     requestAttributePresentation,
     verifyAttributePresentation,
     getContent,
-    isRevoked
+    isRevoked, requestRangeProof
 } = require("./attribute-presentation");
 
 const app = express();
@@ -25,6 +25,8 @@ app.get('/create-order', async (req, res) => {//TODO: should be post but we don'
     `)
 })
 
+const REQUEST_TYPE = process.env.REQUEST_TYPE
+
 app.get('/confirm-connection', async (req, res) => {
     const orderID = req.query.orderID
     console.debug("/confirm-connection?orderID=", orderID)
@@ -32,9 +34,21 @@ app.get('/confirm-connection', async (req, res) => {
     // res.send('Connection confirmed');
 
     //TODO webhooks, for now we send the proof request in response to the established connection
-    const attributePresentationRequest = requestAttributePresentation(orderID)
-    console.debug("Sending back Proof Request, attributePresentationRequest >>", JSON.stringify(attributePresentationRequest))
-    res.json(attributePresentationRequest);
+    let request;
+    console.debug("REQUEST_TYPE >>", REQUEST_TYPE)
+
+    switch (REQUEST_TYPE) {
+        case "ProofOfAddress":
+            request = requestAttributePresentation(orderID)
+            break
+        case "ProofOfAge":
+            request = requestRangeProof(orderID)
+            break
+        default:
+            res.error(`REQUEST_TYPE mismatch`)
+    }
+    console.debug("Sending back Proof Request, attributePresentationRequest >>", JSON.stringify(request))
+    res.json(request);
 
     console.debug(`
     /confirm-connection
@@ -45,12 +59,13 @@ app.get('/confirm-connection', async (req, res) => {
 const WS_SERVER = process.env.WS_SERVER
 
 app.post('/submit-attribute-presentation', async (req, res) => {
+
     try{
         const orderID = req.query.orderID
         console.debug("/submit-attribute-presentation?orderID=", orderID)
         const attributePresentation = req.body
         console.debug("attributePresentation", attributePresentation)
-        const isValid = await verifyAttributePresentation(orderID, attributePresentation, )
+        const isValid = await verifyAttributePresentation(orderID, attributePresentation )
 
         if (isValid) {
             if (!isRevoked(attributePresentation)) {
@@ -92,7 +107,7 @@ app.post('/submit-attribute-presentation', async (req, res) => {
             console.debug("verificationResultResponseJson", verificationResultResponseJson)
         }
         //TODO if is not valid or revoked - pass the error to the checkout
-        res.json({result: isValid})
+        res.json(JSON.stringify({result: isValid}))
         // console.debug(`
         // /confirm-connection
         // orderID: ${orderID}

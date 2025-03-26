@@ -1,7 +1,7 @@
 const {isConnectionEstablished} = require("./connection");
 
 
-const AttributePresentation = {challenge: 14612461246, expiration: 12}//TODO make a collection in mongo, retrieve by Proof Request id for each user
+const AttributePresentation = {challenge: 14612461246, expiration: 12, url:"/heimdalljs/pres/attribute"}//TODO make a collection in mongo, retrieve by Proof Request id for each user
 
 const requestAttributePresentation = (orderID) => {
     console.debug("Requesting Attribute Presentation by orderID, orderID >>", orderID)
@@ -9,6 +9,16 @@ const requestAttributePresentation = (orderID) => {
     //TODO this func should trigger a pop up in the Wallet via web hook, when connection is established
 
     return AttributePresentation
+}
+
+const RangeProof = {challenge: 14612461246, expiration: 12, url:"/heimdalljs/pres/range"}//TODO make a collection in mongo, retrieve by Proof Request id for each user
+
+const requestRangeProof = (orderID) => {
+    console.debug("Requesting Range Proof by orderID, orderID >>", orderID)
+    isConnectionEstablished(orderID);
+    //TODO this func should trigger a pop up in the Wallet via web hook, when connection is established
+
+    return RangeProof
 }
 
 const verifierURL = process.env.HEIMDALL_VERIFIER_URL
@@ -56,6 +66,7 @@ const getContent = (attributePresentation) => attributePresentation.output.conte
 
 module.exports = {
     requestAttributePresentation,
+    requestRangeProof,
     verifyAttributePresentation,
     isRevoked,
     getContent,
